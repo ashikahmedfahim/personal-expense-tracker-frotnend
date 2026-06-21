@@ -1,5 +1,5 @@
 import { apiRequest } from "@/lib/api/client";
-import type { Budget } from "@/types/api";
+import type { Budget, CurrentMonthBudgetOverview, OverallBudgetView } from "@/types/api";
 
 export interface CreateBudgetInput {
   categoryId: number;
@@ -9,6 +9,14 @@ export interface CreateBudgetInput {
 
 export interface UpdateBudgetInput {
   amount: number;
+}
+
+export function getCurrentMonthBudgetOverview(): Promise<CurrentMonthBudgetOverview> {
+  return apiRequest<CurrentMonthBudgetOverview>("/v1/budgets/current-month");
+}
+
+export function getCurrentMonthOverallBudget(): Promise<OverallBudgetView> {
+  return apiRequest<OverallBudgetView>("/v1/budgets/current-month/overall");
 }
 
 export function createBudget(input: CreateBudgetInput): Promise<Budget> {

@@ -47,6 +47,7 @@ export async function apiRequest<T>(
   }
 
   const response = await fetch(`${API_BASE}${path}`, {
+    cache: "no-store",
     ...rest,
     headers: requestHeaders,
   });

@@ -1,28 +1,33 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { usePathname } from "next/navigation";
 import { Pencil, Plus, Trash2 } from "lucide-react";
 
+import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { BudgetProgressCard } from "@/components/app/BudgetProgressCard";
 import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
 import { useAuth } from "@/contexts/AuthContext";
-import { createBudget, deleteBudget, updateBudget } from "@/lib/api/budgets";
+import {
+  createBudget,
+  deleteBudget,
+  getCurrentMonthBudgetOverview,
+  getCurrentMonthOverallBudget,
+  updateBudget,
+} from "@/lib/api/budgets";
 import { listCategories } from "@/lib/api/categories";
-import { listCurrentMonthTransactions } from "@/lib/api/transactions";
 import { getErrorMessage } from "@/lib/api/client";
 import { useToast } from "@/contexts/ToastContext";
-import {
-  getCurrentMonthBudgets,
-  removeBudget,
-  saveBudget,
-} from "@/lib/budget-store";
-import { formatMonthYear } from "@/lib/format";
-import type { Budget, Category } from "@/types/api";
+import { financeColors as fc } from "@/lib/finance-colors";
+import { formatCurrency, formatMonthYear } from "@/lib/format";
+import type { Budget, Category, CurrentMonthBudgetOverview, OverallBudgetView } from "@/types/api";
 
 interface BudgetFormData {
   categoryId: string;
@@ -32,46 +37,41 @@ interface BudgetFormData {
 export default function BudgetsPage() {
   const { user } = useAuth();
   const toast = useToast();
+  const pathname = usePathname();
   const [categories, setCategories] = useState<Category[]>([]);
-  const [budgets, setBudgets] = useState<Budget[]>([]);
-  const [spentByCategory, setSpentByCategory] = useState<Record<number, number>>({});
+  const [budgetOverview, setBudgetOverview] = useState<CurrentMonthBudgetOverview | null>(null);
+  const [overallBudget, setOverallBudget] = useState<OverallBudgetView | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Budget | null>(null);
   const [form, setForm] = useState<BudgetFormData>({ categoryId: "", amount: "" });
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
-
-  const outflowCategories = categories.filter((c) => c.flowType === "OUTFLOW");
+  const [deleteTarget, setDeleteTarget] = useState<Budget | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
-    const [cats, monthGroups] = await Promise.all([
+    setLoading(true);
+    const [cats, overview, overall] = await Promise.all([
       listCategories(),
-      listCurrentMonthTransactions(),
+      getCurrentMonthBudgetOverview(),
+      getCurrentMonthOverallBudget(),
     ]);
     setCategories(cats);
-
-    const spent: Record<number, number> = {};
-    for (const group of monthGroups) {
-      spent[group.category.id] = group.category.transactions.reduce(
-        (s, t) => s + t.amount,
-        0,
-      );
-    }
-    setSpentByCategory(spent);
-
-    if (user) {
-      setBudgets(getCurrentMonthBudgets(user.id));
-    }
+    setBudgetOverview(overview);
+    setOverallBudget(overall);
     setLoading(false);
-  }, [user]);
+  }, []);
 
   useEffect(() => {
     loadData();
-  }, [loadData]);
+  }, [loadData, pathname]);
 
-  const budgetedCategoryIds = new Set(budgets.map((b) => b.categoryId));
-  const availableCategories = outflowCategories.filter(
+  const budgetItems = budgetOverview?.budgets ?? [];
+  const incomeBudgets = budgetItems.filter((item) => item.category.flowType === "INFLOW");
+  const expenseBudgets = budgetItems.filter((item) => item.category.flowType === "OUTFLOW");
+  const budgetedCategoryIds = new Set(budgetItems.map((item) => item.budget.categoryId));
+  const availableCategories = categories.filter(
     (c) => !budgetedCategoryIds.has(c.id) || editing?.categoryId === c.id,
   );
 
@@ -100,12 +100,10 @@ export default function BudgetsPage() {
 
     try {
       if (editing) {
-        const updated = await updateBudget(editing.id, { amount });
-        saveBudget(user.id, updated);
+        await updateBudget(editing.id, { amount });
         toast.success("Budget updated successfully");
       } else {
-        const created = await createBudget({ categoryId, amount });
-        saveBudget(user.id, created);
+        await createBudget({ categoryId, amount });
         toast.success("Budget created successfully");
       }
       setModalOpen(false);
@@ -122,15 +120,18 @@ export default function BudgetsPage() {
     }
   }
 
-  async function handleDelete(budget: Budget) {
-    if (!user || !confirm("Delete this budget?")) return;
+  async function confirmDelete() {
+    if (!user || !deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteBudget(budget.id);
-      removeBudget(user.id, budget.id);
+      await deleteBudget(deleteTarget.id);
       toast.success("Budget deleted successfully");
+      setDeleteTarget(null);
       await loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete budget"));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -152,10 +153,10 @@ export default function BudgetsPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Budgets</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {formatMonthYear()} · one budget per expense category
+            {formatMonthYear()} · one budget per category
           </p>
         </div>
-        {outflowCategories.length > 0 && availableCategories.length > 0 && (
+        {categories.length > 0 && availableCategories.length > 0 && (
           <ActionButton onClick={openCreate}>
             <Plus className="h-4 w-4" />
             Add
@@ -163,47 +164,82 @@ export default function BudgetsPage() {
         )}
       </div>
 
-      {outflowCategories.length === 0 ? (
+      {categories.length === 0 ? (
         <EmptyState
-          title="No expense categories"
-          description="Create an outflow category before setting budgets."
+          title="No categories yet"
+          description="Create income or expense categories before setting budgets."
         />
-      ) : budgets.length === 0 ? (
+      ) : budgetItems.length === 0 ? (
         <EmptyState
           title="No budgets this month"
-          description="Set monthly spending limits for your expense categories."
+          description="Set planned income and expense amounts for your categories."
           action={<ActionButton onClick={openCreate}>Set budget</ActionButton>}
         />
       ) : (
-        <div className="space-y-4">
-          {budgets.map((budget) => (
-            <BudgetProgressCard
-              key={budget.id}
-              name={getCategoryName(budget.categoryId)}
-              spent={spentByCategory[budget.categoryId] ?? 0}
-              budget={budget.amount}
-              actions={
-                <>
-                  <button
-                    type="button"
-                    onClick={() => openEdit(budget)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                    aria-label="Edit budget"
-                  >
-                    <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(budget)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500"
-                    aria-label="Delete budget"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </>
-              }
-            />
-          ))}
+        <div className="space-y-6">
+          {overallBudget &&
+            (overallBudget.totalIncome > 0 || overallBudget.totalAllocated > 0) && (
+              <BudgetOverviewChart overall={overallBudget} />
+            )}
+
+          {incomeBudgets.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-slate-900">Planned income</h2>
+              {incomeBudgets.map((item) => (
+                <div
+                  key={item.budget.id}
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                >
+                  <div className="min-w-0">
+                    <p className="font-semibold text-slate-900">{item.category.name}</p>
+                    <p className="mt-1 text-sm font-medium" style={{ color: fc.income }}>
+                      {formatCurrency(item.budget.amount)} planned
+                    </p>
+                  </div>
+                  <div className="flex shrink-0 gap-1">
+                    <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
+                      <Pencil className="h-4 w-4" />
+                    </IconButton>
+                    <IconButton
+                      variant="danger"
+                      onClick={() => setDeleteTarget(item.budget)}
+                      aria-label="Delete budget"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </IconButton>
+                  </div>
+                </div>
+              ))}
+            </section>
+          )}
+
+          {expenseBudgets.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-slate-900">Expense budgets</h2>
+              {expenseBudgets.map((item) => (
+                <BudgetProgressCard
+                  key={item.budget.id}
+                  name={item.category.name}
+                  spent={item.spent}
+                  budget={item.budget.amount}
+                  actions={
+                    <>
+                      <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
+                        <Pencil className="h-4 w-4" />
+                      </IconButton>
+                      <IconButton
+                        variant="danger"
+                        onClick={() => setDeleteTarget(item.budget)}
+                        aria-label="Delete budget"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </IconButton>
+                    </>
+                  }
+                />
+              ))}
+            </section>
+          )}
         </div>
       )}
 
@@ -222,10 +258,10 @@ export default function BudgetsPage() {
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
               required
             >
-              <option value="">Select expense category</option>
+              <option value="">Select category</option>
               {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name}
+                  {cat.name} ({cat.flowType === "INFLOW" ? "income" : "expense"})
                 </option>
               ))}
             </Select>
@@ -263,6 +299,19 @@ export default function BudgetsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete budget?"
+        description={
+          deleteTarget
+            ? `Remove the monthly budget for ${getCategoryName(deleteTarget.categoryId)}. This action cannot be undone.`
+            : ""
+        }
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

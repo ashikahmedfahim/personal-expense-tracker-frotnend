@@ -6,7 +6,9 @@ import { Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
@@ -50,6 +52,8 @@ export default function TransactionsPage() {
   const [form, setForm] = useState<TransactionFormData>(emptyForm);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteId, setDeleteId] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -120,14 +124,18 @@ export default function TransactionsPage() {
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this transaction?")) return;
+  async function confirmDelete() {
+    if (deleteId === null) return;
+    setDeleting(true);
     try {
-      await deleteTransaction(id);
+      await deleteTransaction(deleteId);
       toast.success("Transaction deleted successfully");
+      setDeleteId(null);
       await loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete transaction"));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -190,22 +198,16 @@ export default function TransactionsPage() {
                     {formatSignedCurrency(tx.amount, flowType)}
                   </p>
                   <div className="flex shrink-0 justify-end gap-1">
-                    <button
-                      type="button"
-                      onClick={() => openEdit(tx)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                      aria-label="Edit"
-                    >
+                    <IconButton onClick={() => openEdit(tx)} aria-label="Edit">
                       <Pencil className="h-4 w-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(tx.id)}
-                      className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                    </IconButton>
+                    <IconButton
+                      variant="danger"
+                      onClick={() => setDeleteId(tx.id)}
                       aria-label="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
-                    </button>
+                    </IconButton>
                   </div>
                 </li>
               );
@@ -281,6 +283,15 @@ export default function TransactionsPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteId !== null}
+        title="Delete transaction?"
+        description="This transaction will be permanently removed. This action cannot be undone."
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteId(null)}
+      />
     </div>
   );
 }

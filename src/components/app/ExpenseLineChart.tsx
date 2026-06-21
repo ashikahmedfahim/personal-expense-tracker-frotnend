@@ -14,6 +14,32 @@ const WIDTH = 800;
 const HEIGHT = 88;
 const PADDING = { top: 8, right: 12, bottom: 22, left: 40 };
 
+function getUtcDateKey(date = new Date()): string {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function getLastSpendingIndex(data: DailyExpenseTotal[]): number {
+  return data.reduce((last, entry, index) => (entry.total > 0 ? index : last), -1);
+}
+
+function getLastLineIndex(data: DailyExpenseTotal[]): number {
+  if (data.length === 0) return -1;
+
+  const todayIndex = data.findIndex((entry) => entry.date === getUtcDateKey());
+  const lastSpendingIndex = getLastSpendingIndex(data);
+  if (lastSpendingIndex < 0) return -1;
+
+  if (todayIndex === -1) return lastSpendingIndex;
+
+  const futureHasSpending = data.slice(todayIndex + 1).some((entry) => entry.total > 0);
+  if (!futureHasSpending) return todayIndex;
+
+  return lastSpendingIndex;
+}
+
 function formatDayUtc(date: string): string {
   return new Intl.DateTimeFormat("da-DK", {
     day: "numeric",
@@ -83,21 +109,33 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
   const chart = useMemo(() => {
+    if (data.length === 0) return null;
+
+    const lastLineIndex = getLastLineIndex(data);
+    if (lastLineIndex < 0) return null;
+
+    const lineData = data.slice(0, lastLineIndex + 1);
+    const hasSpending = lineData.some((entry) => entry.total > 0);
+
+    if (!hasSpending) return null;
+
     const chartWidth = WIDTH - PADDING.left - PADDING.right;
     const chartHeight = HEIGHT - PADDING.top - PADDING.bottom;
-    const maxTotal = Math.max(...data.map((d) => d.total), 1);
+    const maxTotal = Math.max(...lineData.map((d) => d.total));
     const yTicks = buildYTicks(maxTotal);
-    const segmentWidth = chartWidth / Math.max(data.length, 1);
     const xLabelInterval = data.length > 20 ? 5 : data.length > 14 ? 3 : 2;
+    const daySpan = Math.max(data.length - 1, 1);
+    const segmentWidth = chartWidth / data.length;
 
-    const points = data.map((entry, index) => {
-      const x =
-        PADDING.left +
-        (index / Math.max(data.length - 1, 1)) * chartWidth;
+    const xForDay = (dayIndex: number) => PADDING.left + (dayIndex / daySpan) * chartWidth;
+
+    const linePoints = lineData.map((entry, index) => {
+      const x = xForDay(index);
       const y = scaleY(entry.total, maxTotal, chartHeight, PADDING.top);
 
       return {
         ...entry,
+        dayIndex: index,
         x,
         y,
         startX: PADDING.left + index * segmentWidth,
@@ -105,17 +143,36 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
       };
     });
 
+    const xLabels = data.map((entry, index) => ({
+      date: entry.date,
+      x: xForDay(index),
+      show:
+        index === 0 || index === data.length - 1 || index % xLabelInterval === 0,
+    }));
+
     const bottomY = PADDING.top + chartHeight;
-    const linePath = buildSmoothLinePath(points, bottomY);
+    const linePath = buildSmoothLinePath(linePoints, bottomY);
     const areaPath =
-      points.length > 0
-        ? `${linePath} L ${points[points.length - 1].x} ${bottomY} L ${points[0].x} ${bottomY} Z`
+      linePoints.length > 0
+        ? `${linePath} L ${linePoints[linePoints.length - 1].x} ${bottomY} L ${linePoints[0].x} ${bottomY} Z`
         : "";
 
-    return { points, linePath, areaPath, yTicks, maxTotal, chartHeight, bottomY, xLabelInterval };
+    return {
+      linePoints,
+      xLabels,
+      linePath,
+      areaPath,
+      yTicks,
+      maxTotal,
+      chartHeight,
+      bottomY,
+    };
   }, [data]);
 
-  const hovered = hoveredIndex !== null ? chart.points[hoveredIndex] : null;
+  if (!chart) return null;
+
+  const hovered =
+    hoveredIndex !== null ? chart.linePoints.find((p) => p.dayIndex === hoveredIndex) ?? null : null;
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
@@ -194,7 +251,7 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
             />
           </g>
 
-          {chart.points.map((point, index) => (
+          {chart.linePoints.map((point) => (
             <g key={point.date}>
               <rect
                 x={point.startX}
@@ -202,33 +259,36 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
                 width={point.segmentWidth}
                 height={chart.chartHeight}
                 fill="transparent"
-                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseEnter={() => setHoveredIndex(point.dayIndex)}
               />
               {point.total > 0 && (
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r={hoveredIndex === index ? 3.5 : 2}
-                  fill={hoveredIndex === index ? fc.expense : "#fff"}
+                  r={hoveredIndex === point.dayIndex ? 3.5 : 2}
+                  fill={hoveredIndex === point.dayIndex ? fc.expense : "#fff"}
                   stroke={fc.expense}
                   strokeWidth="1.5"
                   pointerEvents="none"
                 />
               )}
-              {(index === 0 ||
-                index === chart.points.length - 1 ||
-                index % chart.xLabelInterval === 0) && (
+            </g>
+          ))}
+
+          {chart.xLabels.map(
+            (label) =>
+              label.show && (
                 <text
-                  x={point.x}
+                  key={label.date}
+                  x={label.x}
                   y={HEIGHT - 6}
                   textAnchor="middle"
                   className="fill-slate-400 text-[9px]"
                 >
-                  {formatDayUtc(point.date)}
+                  {formatDayUtc(label.date)}
                 </text>
-              )}
-            </g>
-          ))}
+              ),
+          )}
         </svg>
       </div>
     </div>

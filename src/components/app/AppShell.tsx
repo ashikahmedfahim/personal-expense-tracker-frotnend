@@ -30,8 +30,8 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <div className="flex min-h-screen bg-slate-50">
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-slate-200 bg-white lg:flex">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
+      <aside className="hidden h-screen w-64 shrink-0 flex-col overflow-hidden border-r border-slate-200 bg-white lg:flex">
         <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-6">
           <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-[#ED7860] text-white">
             <Wallet className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
         <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
           <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-slate-900">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ED7860] text-white">
@@ -142,7 +142,7 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
       </div>
     </div>
   );

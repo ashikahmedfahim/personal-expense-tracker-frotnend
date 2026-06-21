@@ -5,7 +5,9 @@ import { ArrowDownLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react"
 
 import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
 import { Select } from "@/components/ui/Select";
@@ -36,6 +38,8 @@ export default function CategoriesPage() {
   const [form, setForm] = useState<CategoryFormData>(emptyForm);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const loadData = useCallback(async () => {
     const cats = await listCategories();
@@ -91,14 +95,18 @@ export default function CategoriesPage() {
     }
   }
 
-  async function handleDelete(id: number) {
-    if (!confirm("Delete this category?")) return;
+  async function confirmDelete() {
+    if (!deleteTarget) return;
+    setDeleting(true);
     try {
-      await deleteCategory(id);
+      await deleteCategory(deleteTarget.id);
       toast.success("Category deleted successfully");
+      setDeleteTarget(null);
       await loadData();
     } catch (err) {
       toast.error(getErrorMessage(err, "Failed to delete category"));
+    } finally {
+      setDeleting(false);
     }
   }
 
@@ -132,22 +140,16 @@ export default function CategoriesPage() {
                   <p className="text-xs text-slate-400">Order {cat.order}</p>
                 </div>
                 <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => openEdit(cat)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                    aria-label="Edit"
-                  >
+                  <IconButton onClick={() => openEdit(cat)} aria-label="Edit">
                     <Pencil className="h-4 w-4" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(cat.id)}
-                    className="rounded-lg p-2 text-slate-400 hover:bg-red-50 hover:text-red-500"
+                  </IconButton>
+                  <IconButton
+                    variant="danger"
+                    onClick={() => setDeleteTarget(cat)}
                     aria-label="Delete"
                   >
                     <Trash2 className="h-4 w-4" />
-                  </button>
+                  </IconButton>
                 </div>
               </li>
             ))}
@@ -240,6 +242,19 @@ export default function CategoriesPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        title="Delete category?"
+        description={
+          deleteTarget
+            ? `"${deleteTarget.name}" and its linked data may be affected. This action cannot be undone.`
+            : ""
+        }
+        loading={deleting}
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }

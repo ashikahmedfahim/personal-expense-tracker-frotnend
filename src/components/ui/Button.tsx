@@ -31,7 +31,7 @@ export function Button({
   className,
 }: ButtonProps) {
   const baseStyles = cn(
-    "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ED7860]",
+    "inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm font-semibold transition-all cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#ED7860]",
     fullWidth && "w-full",
   );
 

@@ -5,16 +5,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 
+import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { BudgetProgressCard } from "@/components/app/BudgetProgressCard";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { ActionButton } from "@/components/ui/ActionButton";
-import { useAuth } from "@/contexts/AuthContext";
+import { getCurrentMonthBudgetOverview, getCurrentMonthOverallBudget } from "@/lib/api/budgets";
 import { listCurrentMonthDailyExpenseTotals, listCurrentMonthTransactions } from "@/lib/api/transactions";
-import { getCurrentMonthBudgets } from "@/lib/budget-store";
 import { ExpenseLineChart } from "@/components/app/ExpenseLineChart";
 import { financeColors as fc } from "@/lib/finance-colors";
 import { formatCurrency, formatDate, formatMonthYear, formatSignedCurrency } from "@/lib/format";
-import type { DailyExpenseTotal, TransactionsByCategory } from "@/types/api";
+import type { CurrentMonthBudgetOverview, DailyExpenseTotal, OverallBudgetView, TransactionsByCategory } from "@/types/api";
 
 function sumByFlow(groups: TransactionsByCategory[], flowType: "INFLOW" | "OUTFLOW") {
   return groups
@@ -26,18 +26,26 @@ function sumByFlow(groups: TransactionsByCategory[], flowType: "INFLOW" | "OUTFL
 }
 
 export default function DashboardPage() {
-  const { user } = useAuth();
   const pathname = usePathname();
   const [groups, setGroups] = useState<TransactionsByCategory[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpenseTotal[]>([]);
+  const [budgetOverview, setBudgetOverview] = useState<CurrentMonthBudgetOverview | null>(null);
+  const [overallBudget, setOverallBudget] = useState<OverallBudgetView | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     setLoading(true);
-    Promise.all([listCurrentMonthTransactions(), listCurrentMonthDailyExpenseTotals()])
-      .then(([monthGroups, dailyTotals]) => {
+    Promise.all([
+      listCurrentMonthTransactions(),
+      listCurrentMonthDailyExpenseTotals(),
+      getCurrentMonthBudgetOverview(),
+      getCurrentMonthOverallBudget(),
+    ])
+      .then(([monthGroups, dailyTotals, overview, overall]) => {
         setGroups(monthGroups);
         setDailyExpenses(dailyTotals);
+        setBudgetOverview(overview);
+        setOverallBudget(overall);
       })
       .finally(() => setLoading(false));
   }, [pathname]);
@@ -46,18 +54,13 @@ export default function DashboardPage() {
   const expenses = sumByFlow(groups, "OUTFLOW");
   const balance = income - expenses;
 
-  const budgets = user ? getCurrentMonthBudgets(user.id) : [];
-  const budgetCards = budgets.map((budget) => {
-    const group = groups.find((g) => g.category.id === budget.categoryId);
-    const spent = group
-      ? group.category.transactions.reduce((s, t) => s + t.amount, 0)
-      : 0;
-    return {
-      name: group?.category.name ?? `Category #${budget.categoryId}`,
-      spent,
-      budget: budget.amount,
-    };
-  });
+  const budgetCards = (budgetOverview?.budgets ?? [])
+    .filter((item) => item.category.flowType === "OUTFLOW")
+    .map((item) => ({
+    name: item.category.name,
+    spent: item.spent,
+    budget: item.budget.amount,
+  }));
 
   const recentTransactions = groups
     .flatMap((g) =>
@@ -115,9 +118,12 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {dailyExpenses.length > 0 && (
-        <ExpenseLineChart data={dailyExpenses} />
-      )}
+      {dailyExpenses.length > 0 && <ExpenseLineChart data={dailyExpenses} />}
+
+      {overallBudget &&
+        (overallBudget.totalIncome > 0 || overallBudget.totalAllocated > 0) && (
+          <BudgetOverviewChart overall={overallBudget} />
+        )}
 
       {budgetCards.length > 0 && (
         <section>

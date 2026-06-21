@@ -77,6 +77,46 @@ export interface Budget {
   updatedAt: string;
 }
 
+export interface BudgetCategorySummary {
+  id: number;
+  name: string;
+  flowType: FlowType;
+  order: number;
+}
+
+export interface CurrentMonthBudgetItem {
+  budget: Budget;
+  category: BudgetCategorySummary;
+  spent: number;
+  remaining: number;
+}
+
+export interface CurrentMonthBudgetSummary {
+  totalBudget: number;
+  totalSpent: number;
+  remaining: number;
+}
+
+export interface CurrentMonthBudgetOverview {
+  month: string;
+  summary: CurrentMonthBudgetSummary;
+  budgets: CurrentMonthBudgetItem[];
+}
+
+export interface OverallBudgetAllocation {
+  category: BudgetCategorySummary;
+  amount: number;
+}
+
+export interface OverallBudgetView {
+  month: string;
+  totalIncome: number;
+  totalAllocated: number;
+  netBalance: number;
+  income: OverallBudgetAllocation[];
+  allocations: OverallBudgetAllocation[];
+}
+
 export interface JwtPayload {
   id: number;
   email: string;
