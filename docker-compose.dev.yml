@@ -1,0 +1,16 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3001:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    environment:
+      - WATCHPACK_POLLING=true
+      - CHOKIDAR_USEPOLLING=true
+      - API_URL=http://host.docker.internal:3000
+      - NEXT_PUBLIC_API_BASE_URL=/api
+    command: npm run dev -- --hostname 0.0.0.0
