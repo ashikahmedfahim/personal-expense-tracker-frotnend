@@ -65,10 +65,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = useCallback(
     async (firstName: string, lastName: string, email: string, password: string) => {
       await authApi.register({ firstName, lastName, email, password });
-      const token = await authApi.login({ email, password });
-      setToken(token);
-      setUser(decodeToken(token));
-      router.push("/dashboard");
+      router.push(`/verify-email?email=${encodeURIComponent(email)}`);
     },
     [router],
   );

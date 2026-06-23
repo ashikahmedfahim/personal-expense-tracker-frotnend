@@ -1,5 +1,10 @@
 import { apiRequest } from "@/lib/api/client";
-import type { DailyExpenseTotal, Transaction, TransactionsByCategory } from "@/types/api";
+import type {
+  CurrentMonthTransactionOverview,
+  DailyExpenseTotal,
+  Transaction,
+  TransactionsByCategory,
+} from "@/types/api";
 
 export interface CreateTransactionInput {
   title: string;
@@ -23,6 +28,10 @@ export function listRecentTransactions(): Promise<Transaction[]> {
 
 export function listCurrentMonthTransactions(): Promise<TransactionsByCategory[]> {
   return apiRequest<TransactionsByCategory[]>("/v1/transactions/current-month");
+}
+
+export function getCurrentMonthTransactionOverview(): Promise<CurrentMonthTransactionOverview> {
+  return apiRequest<CurrentMonthTransactionOverview>("/v1/transactions/current-month/overview");
 }
 
 export function listCurrentMonthDailyExpenseTotals(): Promise<DailyExpenseTotal[]> {

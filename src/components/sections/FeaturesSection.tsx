@@ -9,7 +9,7 @@ export function FeaturesSection() {
         <SectionHeader
           eyebrow="Features"
           title="Everything you need to manage money"
-          description="From secure auth to monthly budgets — the API covers the full personal finance workflow with clean, testable layers."
+          description="From secure sign-in to budget charts — everything in the app is built for day-to-day money management."
         />
 
         <div className="mt-10 grid grid-cols-1 gap-4 sm:mt-14 sm:grid-cols-2 lg:grid-cols-4">

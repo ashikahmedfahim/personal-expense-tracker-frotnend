@@ -8,15 +8,13 @@ import { Wallet } from "lucide-react";
 import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { Input } from "@/components/ui/Input";
-import { useAuth } from "@/contexts/AuthContext";
+import * as authApi from "@/lib/api/auth";
 import { ApiError } from "@/lib/api/client";
 import { siteConfig } from "@/content/landing";
 
-export default function LoginPage() {
+export default function ForgotPasswordPage() {
   const router = useRouter();
-  const { login } = useAuth();
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -24,14 +22,12 @@ export default function LoginPage() {
     e.preventDefault();
     setError("");
     setLoading(true);
+
     try {
-      await login(email, password);
+      await authApi.forgotPassword(email);
+      router.push(`/reset-password?email=${encodeURIComponent(email)}`);
     } catch (err) {
-      if (err instanceof ApiError && err.status === 403) {
-        router.push(`/verify-email?email=${encodeURIComponent(email)}`);
-        return;
-      }
-      setError(err instanceof ApiError ? err.message : "Login failed");
+      setError(err instanceof ApiError ? err.message : "Failed to send reset code");
     } finally {
       setLoading(false);
     }
@@ -47,8 +43,10 @@ export default function LoginPage() {
             </span>
             <span>{siteConfig.name}</span>
           </Link>
-          <h1 className="mt-6 text-2xl font-bold text-slate-900">Welcome back</h1>
-          <p className="mt-2 text-sm text-slate-500">Sign in to manage your finances</p>
+          <h1 className="mt-6 text-2xl font-bold text-slate-900">Forgot password?</h1>
+          <p className="mt-2 text-sm text-slate-500">
+            Enter your email and we&apos;ll send a reset code
+          </p>
         </div>
 
         <form
@@ -57,43 +55,24 @@ export default function LoginPage() {
         >
           {error && <Alert message={error} className="mb-5" />}
 
-          <div className="space-y-4">
-            <Input
-              label="Email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-              autoComplete="email"
-            />
-            <Input
-              label="Password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              autoComplete="current-password"
-            />
-            <p className="-mt-2 text-right">
-              <Link
-                href="/forgot-password"
-                className="text-xs font-medium text-[#ED7860] hover:text-[#D8654D]"
-              >
-                Forgot password?
-              </Link>
-            </p>
-          </div>
+          <Input
+            label="Email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@example.com"
+            required
+            autoComplete="email"
+          />
 
           <ActionButton type="submit" loading={loading} fullWidth className="mt-6">
-            Sign in
+            Send reset code
           </ActionButton>
 
           <p className="mt-5 text-center text-sm text-slate-500">
-            Don&apos;t have an account?{" "}
-            <Link href="/register" className="font-medium text-[#ED7860] hover:text-[#D8654D]">
-              Create one
+            Remember your password?{" "}
+            <Link href="/login" className="font-medium text-[#ED7860] hover:text-[#D8654D]">
+              Sign in
             </Link>
           </p>
         </form>

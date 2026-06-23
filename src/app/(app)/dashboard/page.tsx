@@ -11,18 +11,31 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { getCurrentMonthBudgetOverview, getCurrentMonthOverallBudget } from "@/lib/api/budgets";
-import { listCurrentMonthDailyExpenseTotals, listCurrentMonthTransactions } from "@/lib/api/transactions";
+import {
+  getCurrentMonthTransactionOverview,
+  listCurrentMonthDailyExpenseTotals,
+  listCurrentMonthTransactions,
+} from "@/lib/api/transactions";
 import { ExpenseLineChart } from "@/components/app/ExpenseLineChart";
+import { buildCategoryTotalsMap, getCategoryTotal } from "@/lib/category-totals";
 import { getFlowColor } from "@/lib/flow";
 import { financeColors as fc } from "@/lib/finance-colors";
 import { formatCurrency, formatDate, formatMonthYear, formatSignedCurrency } from "@/lib/format";
-import type { CurrentMonthBudgetOverview, DailyExpenseTotal, OverallBudgetView, TransactionsByCategory } from "@/types/api";
+import type {
+  CurrentMonthBudgetOverview,
+  CurrentMonthTransactionOverview,
+  DailyExpenseTotal,
+  OverallBudgetView,
+  TransactionsByCategory,
+} from "@/types/api";
 
 export default function DashboardPage() {
   const pathname = usePathname();
   const [groups, setGroups] = useState<TransactionsByCategory[]>([]);
   const [dailyExpenses, setDailyExpenses] = useState<DailyExpenseTotal[]>([]);
   const [budgetOverview, setBudgetOverview] = useState<CurrentMonthBudgetOverview | null>(null);
+  const [transactionOverview, setTransactionOverview] =
+    useState<CurrentMonthTransactionOverview | null>(null);
   const [overallBudget, setOverallBudget] = useState<OverallBudgetView | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -32,28 +45,31 @@ export default function DashboardPage() {
       listCurrentMonthTransactions(),
       listCurrentMonthDailyExpenseTotals(),
       getCurrentMonthBudgetOverview(),
+      getCurrentMonthTransactionOverview(),
       getCurrentMonthOverallBudget(),
     ])
-      .then(([monthGroups, dailyTotals, overview, overall]) => {
+      .then(([monthGroups, dailyTotals, overview, txOverview, overall]) => {
         setGroups(monthGroups);
         setDailyExpenses(dailyTotals);
         setBudgetOverview(overview);
+        setTransactionOverview(txOverview);
         setOverallBudget(overall);
       })
       .finally(() => setLoading(false));
   }, [pathname]);
 
-  const summary = budgetOverview?.summary;
+  const summary = transactionOverview?.summary;
   const income = summary?.totalIncome ?? 0;
   const expenses = summary?.totalExpenses ?? 0;
   const savings = summary?.totalSavings ?? 0;
   const balance = summary?.netBalance ?? 0;
+  const categoryTotals = buildCategoryTotalsMap(transactionOverview);
 
   const budgetCards = (budgetOverview?.budgets ?? [])
     .filter((item) => item.category.flowType !== "INFLOW")
     .map((item) => ({
       name: item.category.name,
-      spent: item.spent,
+      spent: getCategoryTotal(categoryTotals, item.budget.categoryId),
       budget: item.budget.amount,
       flowType: item.category.flowType,
     }));
@@ -122,10 +138,9 @@ export default function DashboardPage() {
 
       {dailyExpenses.length > 0 && <ExpenseLineChart data={dailyExpenses} />}
 
-      {overallBudget &&
-        (overallBudget.plannedAllocated > 0 || overallBudget.plannedSavings > 0) && (
-          <BudgetOverviewChart overall={overallBudget} />
-        )}
+      {overallBudget && overallBudget.totalBudget > 0 && (
+        <BudgetOverviewChart overall={overallBudget} actualIncome={income} />
+      )}
 
       {budgetCards.length > 0 && (
         <section>

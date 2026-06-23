@@ -1,26 +1,9 @@
+import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { Container } from "@/components/ui/Container";
 import { SectionHeader } from "@/components/ui/SectionHeader";
-import { financeColors as fc } from "@/lib/finance-colors";
-import { formatCurrency } from "@/lib/format";
-
-const budgetCategories = [
-  { name: "Groceries", spent: 320, budget: 500, pct: 64 },
-  { name: "Rent", spent: 1200, budget: 1200, pct: 100 },
-  { name: "Transport", spent: 85, budget: 200, pct: 42 },
-];
-
-function BudgetBar({ pct }: { pct: number }) {
-  const barColor = pct >= 100 ? fc.expense : pct >= 80 ? "#FCD34D" : fc.expenseBar;
-
-  return (
-    <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
-      <div
-        className="h-full rounded-full"
-        style={{ width: `${Math.min(pct, 100)}%`, backgroundColor: barColor }}
-      />
-    </div>
-  );
-}
+import { BrowserFrame } from "@/components/marketing/BrowserFrame";
+import { BudgetsPreview } from "@/components/marketing/BudgetsPreview";
+import { showcaseIncome, showcaseOverallBudget } from "@/content/showcase-data";
 
 export function ProductPreviewSection() {
   return (
@@ -29,47 +12,47 @@ export function ProductPreviewSection() {
         <SectionHeader
           eyebrow="Product"
           title="Budgets that keep you on track"
-          description="Set monthly limits per outflow category. One budget per category per month — no duplicates, no guesswork."
+          description="Set monthly limits per category, see spending against each budget, and visualize how your plan fits your actual income."
           align="left"
           className="max-w-xl"
         />
 
-        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-center lg:gap-10">
-          <div className="space-y-4">
-            {budgetCategories.map((cat) => (
-              <div
-                key={cat.name}
-                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-semibold text-slate-900">{cat.name}</p>
-                  <p className="text-sm font-medium" style={{ color: fc.expense }}>
-                    {formatCurrency(cat.spent)} / {formatCurrency(cat.budget)}
-                  </p>
-                </div>
-                <div className="mt-3">
-                  <BudgetBar pct={cat.pct} />
-                </div>
-                <p className="mt-2 text-xs text-slate-500">{cat.pct}% of monthly budget</p>
+        <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-10">
+          <div className="pointer-events-none select-none" aria-hidden>
+            <BrowserFrame url="expensetracker.app/budgets">
+              <div className="space-y-4">
+                <BudgetOverviewChart
+                  overall={showcaseOverallBudget}
+                  actualIncome={showcaseIncome}
+                />
+                <BudgetsPreview />
               </div>
-            ))}
+            </BrowserFrame>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 font-mono text-sm shadow-lg shadow-slate-200/50 sm:p-6">
-            <p className="text-xs font-semibold text-[#ED7860]">POST /v1/budgets</p>
-            <pre className="mt-4 overflow-x-auto rounded-xl bg-slate-50 p-4 text-slate-700">
-{`{
-  "categoryId": 3,
-  "amount": 500,
-  "date": "2026-05-01T00:00:00.000Z"
-}`}
-            </pre>
-            <p
-              className="mt-4 rounded-lg px-3 py-2 text-xs font-medium"
-              style={{ backgroundColor: fc.expenseBg, color: fc.expense }}
-            >
-              → 201 Created · one budget per outflow category per UTC month
-            </p>
+          <div className="space-y-6 lg:pt-8">
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Planned vs actual</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                The overview chart scales your expense and savings budgets against real income
+                this month. See what is allocated, what is left, and which categories make up
+                the plan.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">Per-category progress</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Each budget card shows spent vs planned with a progress bar. Stay on track
+                before you hit the limit — outflow and savings categories both count.
+              </p>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-slate-900">One budget per category</h3>
+              <p className="mt-2 text-sm leading-relaxed text-slate-600">
+                Create a monthly budget for any expense or savings category. Transactions in
+                those categories count toward the limit automatically.
+              </p>
+            </div>
           </div>
         </div>
       </Container>

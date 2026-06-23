@@ -87,25 +87,36 @@ export interface BudgetCategorySummary {
 export interface CurrentMonthBudgetItem {
   budget: Budget;
   category: BudgetCategorySummary;
-  spent: number;
-  earned: number;
-  remaining: number;
 }
 
 export interface CurrentMonthBudgetSummary {
-  totalIncome: number;
   totalExpenses: number;
   totalSavings: number;
-  netBalance: number;
   totalBudget: number;
-  totalSpent: number;
-  remaining: number;
 }
 
 export interface CurrentMonthBudgetOverview {
   month: string;
   summary: CurrentMonthBudgetSummary;
   budgets: CurrentMonthBudgetItem[];
+}
+
+export interface TransactionOverviewCategory {
+  category: BudgetCategorySummary;
+  total: number;
+}
+
+export interface CurrentMonthTransactionSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  totalSavings: number;
+  netBalance: number;
+}
+
+export interface CurrentMonthTransactionOverview {
+  month: string;
+  summary: CurrentMonthTransactionSummary;
+  categories: TransactionOverviewCategory[];
 }
 
 export interface OverallBudgetAllocation {
@@ -115,16 +126,9 @@ export interface OverallBudgetAllocation {
 
 export interface OverallBudgetView {
   month: string;
-  totalIncome: number;
   totalExpenses: number;
   totalSavings: number;
-  totalAllocated: number;
-  netBalance: number;
-  plannedIncome: number;
-  plannedAllocated: number;
-  plannedSavings: number;
-  plannedNetBalance: number;
-  income: OverallBudgetAllocation[];
+  totalBudget: number;
   allocations: OverallBudgetAllocation[];
   savings: OverallBudgetAllocation[];
 }

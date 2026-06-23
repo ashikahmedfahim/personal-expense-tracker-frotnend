@@ -10,6 +10,7 @@ import type { OverallBudgetAllocation, OverallBudgetView } from "@/types/api";
 
 interface BudgetOverviewChartProps {
   overall: OverallBudgetView;
+  actualIncome: number;
 }
 
 type SegmentKind = "expense" | "savings";
@@ -98,28 +99,28 @@ function StackedBar({
   );
 }
 
-export function BudgetOverviewChart({ overall }: BudgetOverviewChartProps) {
+export function BudgetOverviewChart({ overall, actualIncome }: BudgetOverviewChartProps) {
   const [hoveredKey, setHoveredKey] = useState<string | null>(null);
 
   const { segments, remainingPct, plannedOutflow, isOverAllocated, unallocated } = useMemo(() => {
-    const plannedOutflow = overall.plannedAllocated + overall.plannedSavings;
-    const scaleMax = Math.max(overall.totalIncome, 1);
+    const plannedOutflow = overall.totalBudget;
+    const scaleMax = Math.max(actualIncome, 1);
     const expenseSegments = buildSegments(overall.allocations, scaleMax, "expense");
     const savingsSegments = buildSegments(overall.savings, scaleMax, "savings");
     const segments = [...expenseSegments, ...savingsSegments];
-    const isOverAllocated = plannedOutflow > overall.totalIncome;
-    const unallocated = Math.max(0, overall.totalIncome - plannedOutflow);
+    const isOverAllocated = plannedOutflow > actualIncome;
+    const unallocated = Math.max(0, actualIncome - plannedOutflow);
     const remainingPct = !isOverAllocated ? (unallocated / scaleMax) * 100 : 0;
 
     return { segments, remainingPct, plannedOutflow, isOverAllocated, unallocated };
-  }, [overall]);
+  }, [overall, actualIncome]);
 
   const hovered = segments.find((s) => s.key === hoveredKey) ?? null;
-  const hasPlannedData = overall.plannedAllocated > 0 || overall.plannedSavings > 0;
+  const hasPlannedData = overall.totalBudget > 0;
 
   if (!hasPlannedData) return null;
 
-  const overAllocatedBy = plannedOutflow - overall.totalIncome;
+  const overAllocatedBy = plannedOutflow - actualIncome;
 
   return (
     <div
@@ -137,17 +138,17 @@ export function BudgetOverviewChart({ overall }: BudgetOverviewChartProps) {
             aria-hidden={hovered !== null}
           >
             <p className="font-semibold tabular-nums leading-relaxed">
-              <span className="block sm:inline" style={{ color: fc.income }}>
-                {formatCurrency(overall.totalIncome)} income
-              </span>
-              <span className="hidden sm:inline text-slate-400"> · </span>
-              <span className="block sm:inline" style={{ color: fc.expense }}>
-                {formatCurrency(overall.plannedAllocated)} expenses
-              </span>
-              <span className="hidden sm:inline text-slate-400"> · </span>
-              <span className="block sm:inline" style={{ color: fc.savings }}>
-                {formatCurrency(overall.plannedSavings)} savings
-              </span>
+                <span className="block sm:inline" style={{ color: fc.income }}>
+                  {formatCurrency(actualIncome)} income
+                </span>
+                <span className="hidden sm:inline text-slate-400"> · </span>
+                <span className="block sm:inline" style={{ color: fc.expense }}>
+                  {formatCurrency(overall.totalExpenses)} expenses
+                </span>
+                <span className="hidden sm:inline text-slate-400"> · </span>
+                <span className="block sm:inline" style={{ color: fc.savings }}>
+                  {formatCurrency(overall.totalSavings)} savings
+                </span>
             </p>
             <p className="mt-1 font-medium tabular-nums text-slate-600">
               {isOverAllocated

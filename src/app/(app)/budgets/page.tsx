@@ -24,12 +24,20 @@ import {
   updateBudget,
 } from "@/lib/api/budgets";
 import { listCategories } from "@/lib/api/categories";
+import { getCurrentMonthTransactionOverview } from "@/lib/api/transactions";
 import { getErrorMessage } from "@/lib/api/client";
 import { useToast } from "@/contexts/ToastContext";
+import { buildCategoryTotalsMap, getCategoryTotal } from "@/lib/category-totals";
 import { financeColors as fc } from "@/lib/finance-colors";
 import { getFlowLabelLower } from "@/lib/flow";
 import { formatCurrency, formatMonthYear } from "@/lib/format";
-import type { Budget, Category, CurrentMonthBudgetOverview, OverallBudgetView } from "@/types/api";
+import type {
+  Budget,
+  Category,
+  CurrentMonthBudgetOverview,
+  CurrentMonthTransactionOverview,
+  OverallBudgetView,
+} from "@/types/api";
 
 interface BudgetFormData {
   categoryId: string;
@@ -42,6 +50,8 @@ export default function BudgetsPage() {
   const pathname = usePathname();
   const [categories, setCategories] = useState<Category[]>([]);
   const [budgetOverview, setBudgetOverview] = useState<CurrentMonthBudgetOverview | null>(null);
+  const [transactionOverview, setTransactionOverview] =
+    useState<CurrentMonthTransactionOverview | null>(null);
   const [overallBudget, setOverallBudget] = useState<OverallBudgetView | null>(null);
   const [loading, setLoading] = useState(true);
   const [modalOpen, setModalOpen] = useState(false);
@@ -54,13 +64,15 @@ export default function BudgetsPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [cats, overview, overall] = await Promise.all([
+    const [cats, overview, txOverview, overall] = await Promise.all([
       listCategories(),
       getCurrentMonthBudgetOverview(),
+      getCurrentMonthTransactionOverview(),
       getCurrentMonthOverallBudget(),
     ]);
     setCategories(cats);
     setBudgetOverview(overview);
+    setTransactionOverview(txOverview);
     setOverallBudget(overall);
     setLoading(false);
   }, []);
@@ -70,7 +82,8 @@ export default function BudgetsPage() {
   }, [loadData, pathname]);
 
   const budgetItems = budgetOverview?.budgets ?? [];
-  const summary = budgetOverview?.summary;
+  const txSummary = transactionOverview?.summary;
+  const categoryTotals = buildCategoryTotalsMap(transactionOverview);
   const expenseBudgets = budgetItems.filter((item) => item.category.flowType === "OUTFLOW");
   const savingsBudgets = budgetItems.filter((item) => item.category.flowType === "SAVINGS");
   const budgetedCategoryIds = new Set(budgetItems.map((item) => item.budget.categoryId));
@@ -180,7 +193,7 @@ export default function BudgetsPage() {
         />
       ) : (
         <div className="space-y-6">
-          {summary && (
+          {txSummary && (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                 <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -188,7 +201,7 @@ export default function BudgetsPage() {
                   Income
                 </div>
                 <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.income }}>
-                  {formatCurrency(summary.totalIncome)}
+                  {formatCurrency(txSummary.totalIncome)}
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -197,7 +210,7 @@ export default function BudgetsPage() {
                   Expenses
                 </div>
                 <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.expense }}>
-                  {formatCurrency(summary.totalExpenses)}
+                  {formatCurrency(txSummary.totalExpenses)}
                 </p>
               </div>
               <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -206,25 +219,27 @@ export default function BudgetsPage() {
                   Savings
                 </div>
                 <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.savings }}>
-                  {formatCurrency(summary.totalSavings)}
+                  {formatCurrency(txSummary.totalSavings)}
                 </p>
               </div>
               <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-1">
                 <p className="text-xs text-slate-500">Net balance</p>
                 <p
                   className="mt-1 text-lg font-bold tabular-nums"
-                  style={{ color: summary.netBalance >= 0 ? fc.income : fc.expense }}
+                  style={{ color: txSummary.netBalance >= 0 ? fc.income : fc.expense }}
                 >
-                  {formatCurrency(summary.netBalance)}
+                  {formatCurrency(txSummary.netBalance)}
                 </p>
               </div>
             </div>
           )}
 
-          {overallBudget &&
-            (overallBudget.plannedAllocated > 0 || overallBudget.plannedSavings > 0) && (
-              <BudgetOverviewChart overall={overallBudget} />
-            )}
+          {overallBudget && overallBudget.totalBudget > 0 && (
+            <BudgetOverviewChart
+              overall={overallBudget}
+              actualIncome={txSummary?.totalIncome ?? 0}
+            />
+          )}
 
           {expenseBudgets.length > 0 && (
             <section className="space-y-3">
@@ -233,7 +248,7 @@ export default function BudgetsPage() {
                 <BudgetProgressCard
                   key={item.budget.id}
                   name={item.category.name}
-                  spent={item.spent}
+                  spent={getCategoryTotal(categoryTotals, item.budget.categoryId)}
                   budget={item.budget.amount}
                   actions={
                     <>
@@ -261,7 +276,7 @@ export default function BudgetsPage() {
                 <BudgetProgressCard
                   key={item.budget.id}
                   name={item.category.name}
-                  spent={item.spent}
+                  spent={getCategoryTotal(categoryTotals, item.budget.categoryId)}
                   budget={item.budget.amount}
                   flowType="SAVINGS"
                   actions={

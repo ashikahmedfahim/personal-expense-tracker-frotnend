@@ -15,8 +15,8 @@ export function CtaSection() {
             Ready to take control of your finances?
           </h2>
           <p className="relative mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/90 sm:text-lg">
-            Clone the API, spin up the Docker stack, and start tracking categories,
-            transactions, and budgets in minutes.
+            Create your free account, set up categories and budgets, and start tracking your
+            money with a dashboard built for clarity.
           </p>
 
           <div className="relative mt-8 flex w-full flex-col gap-3 sm:mx-auto sm:w-auto sm:flex-row sm:justify-center">
@@ -35,9 +35,9 @@ export function CtaSection() {
           </div>
 
           <ul className="relative mt-6 flex flex-col items-center gap-2 text-sm text-white/80 sm:flex-row sm:flex-wrap sm:justify-center sm:gap-x-6">
-            <li>Node.js 22</li>
-            <li>PostgreSQL + Prisma</li>
-            <li>Docker Compose included</li>
+            <li>No credit card required</li>
+            <li>Email verification</li>
+            <li>Works on mobile & desktop</li>
           </ul>
         </div>
       </Container>
