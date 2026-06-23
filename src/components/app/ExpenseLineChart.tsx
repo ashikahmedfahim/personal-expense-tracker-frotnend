@@ -176,13 +176,13 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-4">
-      <div className="mb-2 flex items-center justify-between gap-3">
+      <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-slate-900">Daily expenses</h2>
           <p className="truncate text-xs text-slate-500">Outflow per day this month</p>
         </div>
         {hovered && (
-          <div className="shrink-0 text-right text-xs">
+          <div className="shrink-0 text-left text-xs sm:text-right">
             <span className="font-medium text-slate-600">{formatDate(`${hovered.date}T12:00:00.000Z`)}</span>
             <span className="ml-1.5 font-semibold" style={{ color: fc.expense }}>
               {formatCurrency(hovered.total)}
@@ -194,7 +194,7 @@ export function ExpenseLineChart({ data }: ExpenseLineChartProps) {
       <div className="w-full">
         <svg
           viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          className="h-[88px] w-full"
+          className="h-[88px] min-w-0 w-full sm:h-[88px]"
           preserveAspectRatio="none"
           role="img"
           aria-label="Daily expense line chart for the current month"

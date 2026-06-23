@@ -71,17 +71,17 @@ export function AppShell({ children }: { children: ReactNode }) {
       </aside>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center justify-between border-b border-slate-200 bg-white px-4 lg:hidden">
-          <Link href="/dashboard" className="flex items-center gap-2 font-semibold text-slate-900">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#ED7860] text-white">
+        <header className="flex h-14 shrink-0 items-center justify-between border-b border-slate-200 bg-white px-4 pt-[env(safe-area-inset-top)] lg:hidden">
+          <Link href="/dashboard" className="flex min-w-0 items-center gap-2 font-semibold text-slate-900">
+            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#ED7860] text-white">
               <Wallet className="h-4 w-4" />
             </span>
-            {siteConfig.name}
+            <span className="truncate">{siteConfig.name}</span>
           </Link>
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
-            className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
             aria-label="Open menu"
           >
             <Menu className="h-5 w-5" />
@@ -96,18 +96,19 @@ export function AppShell({ children }: { children: ReactNode }) {
               onClick={() => setMobileOpen(false)}
               aria-label="Close menu"
             />
-            <div className="absolute right-0 top-0 flex h-full w-72 flex-col bg-white shadow-xl">
-              <div className="flex items-center justify-between border-b border-slate-200 p-4">
+            <div className="absolute right-0 top-0 flex h-full w-[min(100%,18rem)] max-w-full flex-col bg-white shadow-xl">
+              <div className="flex items-center justify-between border-b border-slate-200 p-4 pt-[max(1rem,env(safe-area-inset-top))]">
                 <span className="font-semibold text-slate-900">Menu</span>
                 <button
                   type="button"
                   onClick={() => setMobileOpen(false)}
-                  className="rounded-lg p-2 text-slate-600 hover:bg-slate-100"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-100"
+                  aria-label="Close menu"
                 >
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <nav className="flex-1 space-y-1 p-4">
+              <nav className="flex-1 space-y-1 overflow-y-auto p-4">
                 {navItems.map(({ href, label, icon: Icon }) => (
                   <Link
                     key={href}
@@ -125,7 +126,10 @@ export function AppShell({ children }: { children: ReactNode }) {
                   </Link>
                 ))}
               </nav>
-              <div className="border-t border-slate-200 p-4">
+              <div className="border-t border-slate-200 p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+                {user?.email && (
+                  <p className="mb-3 truncate text-xs text-slate-500">{user.email}</p>
+                )}
                 <button
                   type="button"
                   onClick={() => {
@@ -142,7 +146,9 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
         )}
 
-        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">{children}</main>
+        <main className="min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden p-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );

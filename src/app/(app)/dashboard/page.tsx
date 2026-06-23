@@ -8,6 +8,7 @@ import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
 import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { BudgetProgressCard } from "@/components/app/BudgetProgressCard";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { getCurrentMonthBudgetOverview, getCurrentMonthOverallBudget } from "@/lib/api/budgets";
 import { listCurrentMonthDailyExpenseTotals, listCurrentMonthTransactions } from "@/lib/api/transactions";
@@ -82,35 +83,32 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900">Dashboard</h1>
-        <p className="mt-1 text-sm text-slate-500">{formatMonthYear()} overview</p>
-      </div>
+    <div className="mx-auto min-w-0 max-w-5xl space-y-6 sm:space-y-8">
+      <PageHeader title="Dashboard" description={`${formatMonthYear()} overview`} />
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <ArrowDownLeft className="h-4 w-4" style={{ color: fc.income }} />
             Income
           </div>
-          <p className="mt-2 text-2xl font-bold" style={{ color: fc.income }}>
+          <p className="mt-2 text-xl font-bold sm:text-2xl" style={{ color: fc.income }}>
             {formatCurrency(income)}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <ArrowUpRight className="h-4 w-4" style={{ color: fc.expense }} />
             Expenses
           </div>
-          <p className="mt-2 text-2xl font-bold" style={{ color: fc.expense }}>
+          <p className="mt-2 text-xl font-bold sm:text-2xl" style={{ color: fc.expense }}>
             {formatCurrency(expenses)}
           </p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <p className="text-sm text-slate-500">Net balance</p>
           <p
-            className="mt-2 text-2xl font-bold"
+            className="mt-2 text-xl font-bold sm:text-2xl"
             style={{ color: balance >= 0 ? fc.income : fc.expense }}
           >
             {formatCurrency(balance)}
@@ -127,8 +125,8 @@ export default function DashboardPage() {
 
       {budgetCards.length > 0 && (
         <section>
-          <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Budget progress</h2>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-base font-semibold text-slate-900 sm:text-lg">Budget progress</h2>
             <Link href="/budgets" className="text-sm font-medium text-[#ED7860] hover:text-[#D8654D]">
               Manage budgets
             </Link>
@@ -142,8 +140,8 @@ export default function DashboardPage() {
       )}
 
       <section>
-        <div className="mb-4 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-slate-900">Recent transactions</h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <h2 className="text-base font-semibold text-slate-900 sm:text-lg">Recent transactions</h2>
           <Link
             href="/transactions"
             className="text-sm font-medium text-[#ED7860] hover:text-[#D8654D]"
@@ -168,7 +166,7 @@ export default function DashboardPage() {
               {recentTransactions.map((tx) => (
                 <li
                   key={tx.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-4 gap-y-1 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_auto]"
+                  className="flex flex-col gap-2 px-4 py-4 sm:grid sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:gap-x-4 sm:px-5"
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-slate-900">{tx.title}</p>
@@ -177,7 +175,7 @@ export default function DashboardPage() {
                     </p>
                   </div>
                   <p
-                    className="text-right text-sm font-semibold whitespace-nowrap tabular-nums sm:text-base"
+                    className="text-left text-sm font-semibold whitespace-nowrap tabular-nums sm:text-right sm:text-base"
                     style={{
                       color: tx.flowType === "INFLOW" ? fc.income : fc.expense,
                     }}

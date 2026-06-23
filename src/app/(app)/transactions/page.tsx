@@ -8,6 +8,7 @@ import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -148,17 +149,17 @@ export default function TransactionsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Transactions</h1>
-          <p className="mt-1 text-sm text-slate-500">Your 10 most recent transactions</p>
-        </div>
-        <ActionButton onClick={openCreate} disabled={categories.length === 0}>
-          <Plus className="h-4 w-4" />
-          Add
-        </ActionButton>
-      </div>
+    <div className="mx-auto min-w-0 max-w-3xl space-y-6">
+      <PageHeader
+        title="Transactions"
+        description="Your 10 most recent transactions"
+        action={
+          <ActionButton onClick={openCreate} disabled={categories.length === 0}>
+            <Plus className="h-4 w-4" />
+            Add
+          </ActionButton>
+        }
+      />
 
       {categories.length === 0 ? (
         <EmptyState
@@ -180,7 +181,7 @@ export default function TransactionsPage() {
               return (
                 <li
                   key={tx.id}
-                  className="grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-x-3 gap-y-2 px-5 py-4 sm:gap-x-4"
+                  className="flex flex-col gap-3 px-4 py-4 sm:grid sm:grid-cols-[minmax(0,1fr)_auto_auto] sm:items-center sm:gap-x-4 sm:px-5"
                 >
                   <div className="min-w-0">
                     <p className="font-medium text-slate-900">{tx.title}</p>
@@ -191,13 +192,14 @@ export default function TransactionsPage() {
                       <p className="mt-0.5 truncate text-xs text-slate-400">{tx.description}</p>
                     )}
                   </div>
-                  <p
-                    className="text-right text-sm font-semibold whitespace-nowrap tabular-nums"
-                    style={{ color: flowType === "INFLOW" ? fc.income : fc.expense }}
-                  >
-                    {formatSignedCurrency(tx.amount, flowType)}
-                  </p>
-                  <div className="flex shrink-0 justify-end gap-1">
+                  <div className="flex items-center justify-between gap-3 sm:contents">
+                    <p
+                      className="text-sm font-semibold whitespace-nowrap tabular-nums sm:text-right"
+                      style={{ color: flowType === "INFLOW" ? fc.income : fc.expense }}
+                    >
+                      {formatSignedCurrency(tx.amount, flowType)}
+                    </p>
+                    <div className="flex shrink-0 justify-end gap-1">
                     <IconButton onClick={() => openEdit(tx)} aria-label="Edit">
                       <Pencil className="h-4 w-4" />
                     </IconButton>
@@ -208,6 +210,7 @@ export default function TransactionsPage() {
                     >
                       <Trash2 className="h-4 w-4" />
                     </IconButton>
+                    </div>
                   </div>
                 </li>
               );

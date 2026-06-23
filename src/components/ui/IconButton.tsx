@@ -25,7 +25,7 @@ export function IconButton({
     <button
       type={type}
       className={cn(
-        "cursor-pointer rounded-lg p-2 disabled:cursor-not-allowed disabled:opacity-50",
+        "inline-flex min-h-11 min-w-11 cursor-pointer items-center justify-center rounded-lg p-2 disabled:cursor-not-allowed disabled:opacity-50",
         variants[variant],
         className,
       )}

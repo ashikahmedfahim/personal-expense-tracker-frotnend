@@ -18,7 +18,7 @@ export function Select({ label, error, id, className, children, ...props }: Sele
       <select
         id={selectId}
         className={cn(
-          "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-900 transition-colors focus:border-[#ED7860] focus:outline-none focus:ring-2 focus:ring-[#ED7860]/20",
+          "w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-base text-slate-900 transition-colors focus:border-[#ED7860] focus:outline-none focus:ring-2 focus:ring-[#ED7860]/20 sm:text-sm",
           error && "border-red-400 focus:border-red-400 focus:ring-red-400/20",
           className,
         )}

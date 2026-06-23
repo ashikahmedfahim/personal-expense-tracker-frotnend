@@ -24,9 +24,9 @@ export function BudgetProgressCard({
 
   return (
     <div className={cn("rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5", className)}>
-      <div className="flex items-start justify-between gap-4">
-        <p className="min-w-0 flex-1 font-semibold text-slate-900">{name}</p>
-        <div className="flex shrink-0 flex-col items-end gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <p className="min-w-0 font-semibold text-slate-900">{name}</p>
+        <div className="flex shrink-0 items-center justify-between gap-3 sm:flex-col sm:items-end sm:gap-2">
           <p
             className="text-sm font-medium whitespace-nowrap tabular-nums"
             style={{ color: fc.expense }}

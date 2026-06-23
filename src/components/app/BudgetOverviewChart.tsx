@@ -113,12 +113,12 @@ export function BudgetOverviewChart({ overall }: BudgetOverviewChartProps) {
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
-      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
           <h2 className="text-sm font-semibold text-slate-900">Budget overview</h2>
           <p className="text-xs text-slate-500">Expense allocation this month</p>
         </div>
-        <div className="text-right text-xs sm:text-sm">
+        <div className="min-w-0 text-left text-xs sm:text-right sm:text-sm">
           {hovered ? (
             <>
               <p className="font-medium text-slate-900">{hovered.name}</p>
@@ -126,13 +126,16 @@ export function BudgetOverviewChart({ overall }: BudgetOverviewChartProps) {
             </>
           ) : (
             <>
-              <p className="font-semibold tabular-nums">
-                <span style={{ color: fc.income }}>{formatCurrency(overall.totalIncome)}</span>
-                <span className="font-normal text-slate-400"> income · </span>
-                <span style={{ color: fc.expense }}>{formatCurrency(overall.totalAllocated)}</span>
-                <span className="font-normal text-slate-400"> allocated</span>
+              <p className="font-semibold tabular-nums leading-relaxed">
+                <span className="block sm:inline" style={{ color: fc.income }}>
+                  {formatCurrency(overall.totalIncome)} income
+                </span>
+                <span className="hidden sm:inline text-slate-400"> · </span>
+                <span className="block sm:inline" style={{ color: fc.expense }}>
+                  {formatCurrency(overall.totalAllocated)} allocated
+                </span>
               </p>
-              <p className="font-medium tabular-nums text-slate-600">
+              <p className="mt-1 font-medium tabular-nums text-slate-600">
                 Net balance {formatCurrency(overall.netBalance)}
               </p>
             </>

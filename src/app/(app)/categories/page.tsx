@@ -7,6 +7,7 @@ import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -134,7 +135,7 @@ export default function CategoriesPage() {
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <ul className="divide-y divide-slate-100">
             {items.map((cat) => (
-              <li key={cat.id} className="flex items-center gap-4 px-5 py-4">
+              <li key={cat.id} className="flex items-center gap-3 px-4 py-4 sm:gap-4 sm:px-5">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-slate-900">{cat.name}</p>
                   <p className="text-xs text-slate-400">Order {cat.order}</p>
@@ -168,17 +169,17 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Categories</h1>
-          <p className="mt-1 text-sm text-slate-500">Organize income and expenses</p>
-        </div>
-        <ActionButton onClick={openCreate}>
-          <Plus className="h-4 w-4" />
-          Add
-        </ActionButton>
-      </div>
+    <div className="mx-auto min-w-0 max-w-3xl space-y-6">
+      <PageHeader
+        title="Categories"
+        description="Organize income and expenses"
+        action={
+          <ActionButton onClick={openCreate}>
+            <Plus className="h-4 w-4" />
+            Add
+          </ActionButton>
+        }
+      />
 
       {categories.length === 0 ? (
         <EmptyState

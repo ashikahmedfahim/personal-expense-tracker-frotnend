@@ -10,6 +10,7 @@ import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import { EmptyState } from "@/components/ui/EmptyState";
+import { PageHeader } from "@/components/ui/PageHeader";
 import { IconButton } from "@/components/ui/IconButton";
 import { Input } from "@/components/ui/Input";
 import { Modal } from "@/components/ui/Modal";
@@ -148,21 +149,19 @@ export default function BudgetsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Budgets</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {formatMonthYear()} · one budget per category
-          </p>
-        </div>
-        {categories.length > 0 && availableCategories.length > 0 && (
-          <ActionButton onClick={openCreate}>
-            <Plus className="h-4 w-4" />
-            Add
-          </ActionButton>
-        )}
-      </div>
+    <div className="mx-auto min-w-0 max-w-3xl space-y-6">
+      <PageHeader
+        title="Budgets"
+        description={`${formatMonthYear()} · one budget per category`}
+        action={
+          categories.length > 0 && availableCategories.length > 0 ? (
+            <ActionButton onClick={openCreate}>
+              <Plus className="h-4 w-4" />
+              Add
+            </ActionButton>
+          ) : undefined
+        }
+      />
 
       {categories.length === 0 ? (
         <EmptyState
@@ -188,7 +187,7 @@ export default function BudgetsPage() {
               {incomeBudgets.map((item) => (
                 <div
                   key={item.budget.id}
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5"
+                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
                 >
                   <div className="min-w-0">
                     <p className="font-semibold text-slate-900">{item.category.name}</p>
@@ -196,7 +195,7 @@ export default function BudgetsPage() {
                       {formatCurrency(item.budget.amount)} planned
                     </p>
                   </div>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
                     <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
                       <Pencil className="h-4 w-4" />
                     </IconButton>
