@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { ArrowDownLeft, ArrowUpRight, Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, PiggyBank, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { Alert } from "@/components/ui/Alert";
 import { ActionButton } from "@/components/ui/ActionButton";
@@ -54,6 +54,7 @@ export default function CategoriesPage() {
 
   const inflow = categories.filter((c) => c.flowType === "INFLOW");
   const outflow = categories.filter((c) => c.flowType === "OUTFLOW");
+  const savings = categories.filter((c) => c.flowType === "SAVINGS");
 
   function openCreate() {
     setEditing(null);
@@ -172,7 +173,7 @@ export default function CategoriesPage() {
     <div className="mx-auto min-w-0 max-w-3xl space-y-6">
       <PageHeader
         title="Categories"
-        description="Organize income and expenses"
+        description="Organize income, expenses, and savings"
         action={
           <ActionButton onClick={openCreate}>
             <Plus className="h-4 w-4" />
@@ -184,7 +185,7 @@ export default function CategoriesPage() {
       {categories.length === 0 ? (
         <EmptyState
           title="No categories yet"
-          description="Create income and expense categories to organize your transactions."
+          description="Create income, expense, and savings categories to organize your transactions."
           action={<ActionButton onClick={openCreate}>Add category</ActionButton>}
         />
       ) : (
@@ -200,6 +201,12 @@ export default function CategoriesPage() {
             icon={ArrowUpRight}
             color={fc.expense}
             label="Expenses"
+          />
+          <CategoryList
+            items={savings}
+            icon={PiggyBank}
+            color={fc.savings}
+            label="Savings"
           />
         </div>
       )}
@@ -225,6 +232,7 @@ export default function CategoriesPage() {
             onChange={(e) => setForm({ ...form, flowType: e.target.value as FlowType })}
           >
             <option value="OUTFLOW">Expense (outflow)</option>
+            <option value="SAVINGS">Savings</option>
             <option value="INFLOW">Income (inflow)</option>
           </Select>
 

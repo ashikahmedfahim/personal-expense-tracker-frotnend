@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowDownLeft, ArrowUpRight } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, PiggyBank } from "lucide-react";
 
 import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { BudgetProgressCard } from "@/components/app/BudgetProgressCard";
@@ -13,18 +13,10 @@ import { ActionButton } from "@/components/ui/ActionButton";
 import { getCurrentMonthBudgetOverview, getCurrentMonthOverallBudget } from "@/lib/api/budgets";
 import { listCurrentMonthDailyExpenseTotals, listCurrentMonthTransactions } from "@/lib/api/transactions";
 import { ExpenseLineChart } from "@/components/app/ExpenseLineChart";
+import { getFlowColor } from "@/lib/flow";
 import { financeColors as fc } from "@/lib/finance-colors";
 import { formatCurrency, formatDate, formatMonthYear, formatSignedCurrency } from "@/lib/format";
 import type { CurrentMonthBudgetOverview, DailyExpenseTotal, OverallBudgetView, TransactionsByCategory } from "@/types/api";
-
-function sumByFlow(groups: TransactionsByCategory[], flowType: "INFLOW" | "OUTFLOW") {
-  return groups
-    .filter((g) => g.category.flowType === flowType)
-    .reduce(
-      (sum, g) => sum + g.category.transactions.reduce((s, t) => s + t.amount, 0),
-      0,
-    );
-}
 
 export default function DashboardPage() {
   const pathname = usePathname();
@@ -51,17 +43,20 @@ export default function DashboardPage() {
       .finally(() => setLoading(false));
   }, [pathname]);
 
-  const income = sumByFlow(groups, "INFLOW");
-  const expenses = sumByFlow(groups, "OUTFLOW");
-  const balance = income - expenses;
+  const summary = budgetOverview?.summary;
+  const income = summary?.totalIncome ?? 0;
+  const expenses = summary?.totalExpenses ?? 0;
+  const savings = summary?.totalSavings ?? 0;
+  const balance = summary?.netBalance ?? 0;
 
   const budgetCards = (budgetOverview?.budgets ?? [])
-    .filter((item) => item.category.flowType === "OUTFLOW")
+    .filter((item) => item.category.flowType !== "INFLOW")
     .map((item) => ({
-    name: item.category.name,
-    spent: item.spent,
-    budget: item.budget.amount,
-  }));
+      name: item.category.name,
+      spent: item.spent,
+      budget: item.budget.amount,
+      flowType: item.category.flowType,
+    }));
 
   const recentTransactions = groups
     .flatMap((g) =>
@@ -86,7 +81,7 @@ export default function DashboardPage() {
     <div className="mx-auto min-w-0 max-w-5xl space-y-6 sm:space-y-8">
       <PageHeader title="Dashboard" description={`${formatMonthYear()} overview`} />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <ArrowDownLeft className="h-4 w-4" style={{ color: fc.income }} />
@@ -106,6 +101,15 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex items-center gap-2 text-sm text-slate-500">
+            <PiggyBank className="h-4 w-4" style={{ color: fc.savings }} />
+            Savings
+          </div>
+          <p className="mt-2 text-xl font-bold sm:text-2xl" style={{ color: fc.savings }}>
+            {formatCurrency(savings)}
+          </p>
+        </div>
+        <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 lg:col-span-1">
           <p className="text-sm text-slate-500">Net balance</p>
           <p
             className="mt-2 text-xl font-bold sm:text-2xl"
@@ -119,7 +123,7 @@ export default function DashboardPage() {
       {dailyExpenses.length > 0 && <ExpenseLineChart data={dailyExpenses} />}
 
       {overallBudget &&
-        (overallBudget.totalIncome > 0 || overallBudget.totalAllocated > 0) && (
+        (overallBudget.plannedAllocated > 0 || overallBudget.plannedSavings > 0) && (
           <BudgetOverviewChart overall={overallBudget} />
         )}
 
@@ -176,9 +180,7 @@ export default function DashboardPage() {
                   </div>
                   <p
                     className="text-left text-sm font-semibold whitespace-nowrap tabular-nums sm:text-right sm:text-base"
-                    style={{
-                      color: tx.flowType === "INFLOW" ? fc.income : fc.expense,
-                    }}
+                    style={{ color: getFlowColor(tx.flowType) }}
                   >
                     {formatSignedCurrency(tx.amount, tx.flowType)}
                   </p>

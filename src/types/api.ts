@@ -1,4 +1,4 @@
-export type FlowType = "INFLOW" | "OUTFLOW";
+export type FlowType = "INFLOW" | "OUTFLOW" | "SAVINGS";
 export type TransactionStatus = "PENDING" | "COMPLETED" | "CANCELLED";
 
 export interface ApiResponse<T> {
@@ -88,10 +88,15 @@ export interface CurrentMonthBudgetItem {
   budget: Budget;
   category: BudgetCategorySummary;
   spent: number;
+  earned: number;
   remaining: number;
 }
 
 export interface CurrentMonthBudgetSummary {
+  totalIncome: number;
+  totalExpenses: number;
+  totalSavings: number;
+  netBalance: number;
   totalBudget: number;
   totalSpent: number;
   remaining: number;
@@ -111,10 +116,17 @@ export interface OverallBudgetAllocation {
 export interface OverallBudgetView {
   month: string;
   totalIncome: number;
+  totalExpenses: number;
+  totalSavings: number;
   totalAllocated: number;
   netBalance: number;
+  plannedIncome: number;
+  plannedAllocated: number;
+  plannedSavings: number;
+  plannedNetBalance: number;
   income: OverallBudgetAllocation[];
   allocations: OverallBudgetAllocation[];
+  savings: OverallBudgetAllocation[];
 }
 
 export interface JwtPayload {

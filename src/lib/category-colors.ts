@@ -29,6 +29,20 @@ export function getIncomeChartColor(categoryId: number): string {
   return incomeChartPalette[Math.abs(categoryId) % incomeChartPalette.length];
 }
 
+/** Bluish / purple tones for savings segments */
+export const savingsChartPalette = [
+  "#6366F1",
+  "#818CF8",
+  "#7B9FD4",
+  "#A78BFA",
+  "#60A5FA",
+  "#C084FC",
+] as const;
+
+export function getSavingsChartColor(categoryId: number): string {
+  return savingsChartPalette[Math.abs(categoryId) % savingsChartPalette.length];
+}
+
 /** @deprecated Use getExpenseChartColor or getIncomeChartColor */
 export function getCategoryChartColor(categoryId: number): string {
   return getExpenseChartColor(categoryId);

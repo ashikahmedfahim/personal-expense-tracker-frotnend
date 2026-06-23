@@ -1,3 +1,5 @@
+import type { FlowType } from "@/types/api";
+
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat("da-DK", {
     style: "currency",
@@ -6,10 +8,7 @@ export function formatCurrency(amount: number): string {
   }).format(amount);
 }
 
-export function formatSignedCurrency(
-  amount: number,
-  flowType: "INFLOW" | "OUTFLOW",
-): string {
+export function formatSignedCurrency(amount: number, flowType: FlowType): string {
   const prefix = flowType === "INFLOW" ? "+" : "−";
   return `${prefix}${formatCurrency(amount)}`;
 }

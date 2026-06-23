@@ -22,7 +22,7 @@ import {
 } from "@/lib/api/transactions";
 import { getErrorMessage } from "@/lib/api/client";
 import { useToast } from "@/contexts/ToastContext";
-import { financeColors as fc } from "@/lib/finance-colors";
+import { getFlowColor, getFlowLabel } from "@/lib/flow";
 import { formatDate, formatSignedCurrency, toDateInputValue, toIsoDate } from "@/lib/format";
 import type { Category, Transaction } from "@/types/api";
 
@@ -195,7 +195,7 @@ export default function TransactionsPage() {
                   <div className="flex items-center justify-between gap-3 sm:contents">
                     <p
                       className="text-sm font-semibold whitespace-nowrap tabular-nums sm:text-right"
-                      style={{ color: flowType === "INFLOW" ? fc.income : fc.expense }}
+                      style={{ color: getFlowColor(flowType) }}
                     >
                       {formatSignedCurrency(tx.amount, flowType)}
                     </p>
@@ -253,7 +253,7 @@ export default function TransactionsPage() {
             <option value="">Select category</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name} ({cat.flowType === "INFLOW" ? "Income" : "Expense"})
+                {cat.name} ({getFlowLabel(cat.flowType)})
               </option>
             ))}
           </Select>

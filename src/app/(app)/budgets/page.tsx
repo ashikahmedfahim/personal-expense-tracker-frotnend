@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { usePathname } from "next/navigation";
-import { Pencil, Plus, Trash2 } from "lucide-react";
+import { ArrowDownLeft, ArrowUpRight, PiggyBank, Pencil, Plus, Trash2 } from "lucide-react";
 
 import { BudgetOverviewChart } from "@/components/app/BudgetOverviewChart";
 import { BudgetProgressCard } from "@/components/app/BudgetProgressCard";
@@ -27,6 +27,7 @@ import { listCategories } from "@/lib/api/categories";
 import { getErrorMessage } from "@/lib/api/client";
 import { useToast } from "@/contexts/ToastContext";
 import { financeColors as fc } from "@/lib/finance-colors";
+import { getFlowLabelLower } from "@/lib/flow";
 import { formatCurrency, formatMonthYear } from "@/lib/format";
 import type { Budget, Category, CurrentMonthBudgetOverview, OverallBudgetView } from "@/types/api";
 
@@ -69,11 +70,14 @@ export default function BudgetsPage() {
   }, [loadData, pathname]);
 
   const budgetItems = budgetOverview?.budgets ?? [];
-  const incomeBudgets = budgetItems.filter((item) => item.category.flowType === "INFLOW");
+  const summary = budgetOverview?.summary;
   const expenseBudgets = budgetItems.filter((item) => item.category.flowType === "OUTFLOW");
+  const savingsBudgets = budgetItems.filter((item) => item.category.flowType === "SAVINGS");
   const budgetedCategoryIds = new Set(budgetItems.map((item) => item.budget.categoryId));
   const availableCategories = categories.filter(
-    (c) => !budgetedCategoryIds.has(c.id) || editing?.categoryId === c.id,
+    (c) =>
+      c.flowType !== "INFLOW" &&
+      (!budgetedCategoryIds.has(c.id) || editing?.categoryId === c.id),
   );
 
   function openCreate() {
@@ -166,51 +170,61 @@ export default function BudgetsPage() {
       {categories.length === 0 ? (
         <EmptyState
           title="No categories yet"
-          description="Create income or expense categories before setting budgets."
+          description="Create expense or savings categories before setting budgets."
         />
       ) : budgetItems.length === 0 ? (
         <EmptyState
           title="No budgets this month"
-          description="Set planned income and expense amounts for your categories."
+          description="Set planned expense and savings amounts for your categories."
           action={<ActionButton onClick={openCreate}>Set budget</ActionButton>}
         />
       ) : (
         <div className="space-y-6">
+          {summary && (
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <ArrowDownLeft className="h-3.5 w-3.5" style={{ color: fc.income }} />
+                  Income
+                </div>
+                <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.income }}>
+                  {formatCurrency(summary.totalIncome)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <ArrowUpRight className="h-3.5 w-3.5" style={{ color: fc.expense }} />
+                  Expenses
+                </div>
+                <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.expense }}>
+                  {formatCurrency(summary.totalExpenses)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="flex items-center gap-2 text-xs text-slate-500">
+                  <PiggyBank className="h-3.5 w-3.5" style={{ color: fc.savings }} />
+                  Savings
+                </div>
+                <p className="mt-1 text-lg font-bold tabular-nums" style={{ color: fc.savings }}>
+                  {formatCurrency(summary.totalSavings)}
+                </p>
+              </div>
+              <div className="col-span-2 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:col-span-1">
+                <p className="text-xs text-slate-500">Net balance</p>
+                <p
+                  className="mt-1 text-lg font-bold tabular-nums"
+                  style={{ color: summary.netBalance >= 0 ? fc.income : fc.expense }}
+                >
+                  {formatCurrency(summary.netBalance)}
+                </p>
+              </div>
+            </div>
+          )}
+
           {overallBudget &&
-            (overallBudget.totalIncome > 0 || overallBudget.totalAllocated > 0) && (
+            (overallBudget.plannedAllocated > 0 || overallBudget.plannedSavings > 0) && (
               <BudgetOverviewChart overall={overallBudget} />
             )}
-
-          {incomeBudgets.length > 0 && (
-            <section className="space-y-3">
-              <h2 className="text-sm font-semibold text-slate-900">Planned income</h2>
-              {incomeBudgets.map((item) => (
-                <div
-                  key={item.budget.id}
-                  className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-5"
-                >
-                  <div className="min-w-0">
-                    <p className="font-semibold text-slate-900">{item.category.name}</p>
-                    <p className="mt-1 text-sm font-medium" style={{ color: fc.income }}>
-                      {formatCurrency(item.budget.amount)} planned
-                    </p>
-                  </div>
-                  <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
-                    <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
-                      <Pencil className="h-4 w-4" />
-                    </IconButton>
-                    <IconButton
-                      variant="danger"
-                      onClick={() => setDeleteTarget(item.budget)}
-                      aria-label="Delete budget"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </IconButton>
-                  </div>
-                </div>
-              ))}
-            </section>
-          )}
 
           {expenseBudgets.length > 0 && (
             <section className="space-y-3">
@@ -221,6 +235,35 @@ export default function BudgetsPage() {
                   name={item.category.name}
                   spent={item.spent}
                   budget={item.budget.amount}
+                  actions={
+                    <>
+                      <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
+                        <Pencil className="h-4 w-4" />
+                      </IconButton>
+                      <IconButton
+                        variant="danger"
+                        onClick={() => setDeleteTarget(item.budget)}
+                        aria-label="Delete budget"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </IconButton>
+                    </>
+                  }
+                />
+              ))}
+            </section>
+          )}
+
+          {savingsBudgets.length > 0 && (
+            <section className="space-y-3">
+              <h2 className="text-sm font-semibold text-slate-900">Savings budgets</h2>
+              {savingsBudgets.map((item) => (
+                <BudgetProgressCard
+                  key={item.budget.id}
+                  name={item.category.name}
+                  spent={item.spent}
+                  budget={item.budget.amount}
+                  flowType="SAVINGS"
                   actions={
                     <>
                       <IconButton onClick={() => openEdit(item.budget)} aria-label="Edit budget">
@@ -260,7 +303,7 @@ export default function BudgetsPage() {
               <option value="">Select category</option>
               {availableCategories.map((cat) => (
                 <option key={cat.id} value={cat.id}>
-                  {cat.name} ({cat.flowType === "INFLOW" ? "income" : "expense"})
+                  {cat.name} ({getFlowLabelLower(cat.flowType)})
                 </option>
               ))}
             </Select>
